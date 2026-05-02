@@ -19,7 +19,7 @@ const Header = () => {
         className='app__hero-content'
       >
         <h1 className='app__hero-title'>
-          I build systems that <span>scale, perform</span>, and don&apos;t break.
+          I build systems that <span>scale, perform</span>, and don&apos;t <span>break</span>.
         </h1>
 
         <p className='app__hero-subtitle'>
