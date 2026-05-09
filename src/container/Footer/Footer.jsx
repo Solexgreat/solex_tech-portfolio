@@ -1,9 +1,13 @@
 import React, { useState } from 'react'
 import { images } from '../../constants';
 import { AppWrap, MotionWrap } from '../../wrapper'
-import { client} from '../../client'
+import emailjs from '@emailjs/browser';
 import './Footer.scss';
 import { useToggle } from '../../context/ToggleProvider';
+
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 
 
 const Footer = () => {
@@ -28,21 +32,38 @@ const Footer = () => {
     setFormData({...formData, [name]: value})
   }
 
-  const handleSubmit = () => {
-    setLoading(true);
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-    const contact = {
-      _type: 'contact',
-      name: name,
-      email: email,
-      message: message
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      alert('Email service is not configured. Please try again later.');
+      return;
     }
 
-    client.create(contact)
+    setLoading(true);
+
+    const templateParams = {
+      from_name: name,
+      from_email: email,
+      message,
+      reply_to: email,
+    };
+
+    emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      templateParams,
+      EMAILJS_PUBLIC_KEY
+    )
       .then(() => {
         setLoading(false);
-        setIsFormSubmitted(true)
-    })
+        setIsFormSubmitted(true);
+      })
+      .catch((error) => {
+        console.error('EmailJS send failed:', error);
+        setLoading(false);
+        alert('Failed to send message. Please try again.');
+      });
   }
 
 
@@ -65,12 +86,12 @@ const Footer = () => {
       </div>
 
       {!isFormSubmitted ?
-       <div className='app__footer-form app_flex'>
+       <form className='app__footer-form app_flex' onSubmit={handleSubmit}>
         <div className='app__flex'>
-          <input className='p-text' type="text" placeholder='Your Name' name="name" onChange={handleChangeInput} value={name} />
+          <input className='p-text' type="text" placeholder='Your Name' name="name" onChange={handleChangeInput} value={name} required />
         </div>
         <div className='app__flex'>
-          <input className='p-text' type="email" placeholder='Your Email' name="email" onChange={handleChangeInput} value={email} />
+          <input className='p-text' type="email" placeholder='Your Email' name="email" onChange={handleChangeInput} value={email} required />
         </div>
         <div>
           <textarea
@@ -79,10 +100,11 @@ const Footer = () => {
             value={message}
             name='message'
             onChange={handleChangeInput}
+            required
           />
         </div>
-        <button type='button' className='p-text' onClick={handleSubmit} > {loading ? 'sending...': 'Send Message'}</button>
-        </div> :
+        <button type='submit' className='p-text' disabled={loading}> {loading ? 'sending...': 'Send Message'}</button>
+        </form> :
         <div>
           <h3 className='head-text'>
             Thank you for getting in touch
